@@ -24,6 +24,18 @@ class ModListManager {
     removeModFromIndex(index) {
         this.mods.splice(index, 1);
     }
+
+    updateMod(index, mod) {
+        this.mods[index] = mod;
+    }
+
+    setMods(mods) {
+        this.mods = mods;
+    }
+
+    clearModList() {
+        this.mods = [];
+    }
 }
 
 export const modListStore = new ModListManager();

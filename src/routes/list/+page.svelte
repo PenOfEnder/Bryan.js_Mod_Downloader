@@ -1,11 +1,12 @@
 <script>
+    import { json } from "@sveltejs/kit";
     import mod_template from "$utils/mod_template.js";
-
     import { modListStore } from "$utils/mods.svelte.js";
 
     let modName = "";
 
     function addMod() {
+
         if (!modName) return;
 
         const already = modListStore.mods.some((m) => m.name === modName);
@@ -14,6 +15,7 @@
         let modTemplate = structuredClone(mod_template);
         modTemplate["name"] = modName;
         modListStore.addMod(modTemplate);
+        
         modName = "";
     }
 
@@ -63,14 +65,12 @@
     let loading = false;
     let errorMsg = "";
 
-    // Función auxiliar para convertir buffer a Hexadecimal
     function bufferToHex(buffer) {
         return Array.from(new Uint8Array(buffer))
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
     }
 
-    // Aceptamos el evento 'e' opcionalmente para limpiar el input
     async function handleIdentify(e) {
         if (!selectedFile) return;
 
@@ -133,14 +133,14 @@
     import Footer from "$lib/components/ui/footer.svelte";
     import Input from "$lib/components/files/input.svelte";
 
-    import ModsList from "$lib/components/files/mods_list.svelte";
+    import ModList from "$lib/components/files/mods_list.svelte";
 
     import TrashIcon from "$lib/svg_icons/trash.svelte";
     import FileIcon from "$lib/svg_icons/file.svelte";
     import ExportIcon from "$lib/svg_icons/export.svelte";
     import ArrowLeftIcon from "$lib/svg_icons/arrow_left.svelte";
     import ArrowRightIcon from "$lib/svg_icons/arrow_right.svelte";
-    import { json } from "@sveltejs/kit";
+    import ZapIcon from "$lib/svg_icons/zap.svelte";
 </script>
 
 <main
@@ -153,7 +153,9 @@
         </h2>
     </Navbar>
 
-    <section class="w-8/10 h-full flex flex-col items-center justify-center">
+    <section
+        class="w-8/10 flex-1 min-h-0 flex flex-col items-center justify-center"
+    >
         <aside
             class="w-full flex items-center justify-between text-2xl p-2 gap-4"
         >
@@ -171,22 +173,25 @@
 
             <label
                 for="file-jar"
-                class="bg-main-green-600 text-main-green-100 h-full rounded-md p-2 cursor-pointer disabled:bg-main-green-400"
+                class="flex items-center justify-center gap-2 bg-main-green-600 text-main-green-100 h-full text-nowrap rounded-md p-2 cursor-pointer disabled:bg-main-green-400 hover:bg-main-green-700 transition-colors ease-in-out duration-500"
                 disabled={loading}
             >
                 <span>{loading ? "Analizando..." : "Identificar JAR"}</span>
+                <ZapIcon size="20px" color="#d3f8e7" />
             </label>
             <input
-                class="bg-main-green-800 text-main-green-200 h-full aspect-square rounded-md p-2 cursor-pointer"
+                class="flex items-center justify-center gap-2 bg-main-green-800 text-main-green-100 h-full aspect-square rounded-md p-2 cursor-pointer disabled:bg-main-green-400 hover:bg-main-green-900 transition-colors ease-in-out duration-500"
                 type="button"
                 value="+"
                 on:click={addMod}
             />
         </aside>
-        <bside class="w-full h-full pt-4">
-            <ModsList>
+        <bside class="w-full flex-1 min-h-0 overflow-y-hidden pt-4">
+            <ModList>
                 <li
-                    class="select-none w-full h-min text-xl flex items-center justify-between p-2 gap-4 text-main-green-900"
+                    class="sticky top-0 select-none w-full h-min text-xl flex items-center justify-between p-2 gap-4 text-main-green-900
+                    backdrop-blur-lg backdrop-brightness-90
+                    "
                 >
                     <span
                         class="w-1/10 text-center bg-main-green-50 rounded-md p-2"
@@ -225,10 +230,10 @@
                         </button>
                     </li>
                 {/each}
-            </ModsList>
+            </ModList>
         </bside>
 
-        <cside class="w-full p-2">
+        <cside class="w-full h-min p-2">
             <section class="w-full flex items-center justify-between">
                 <a
                     class=" h-full flex items-center justify-center gap-4"
@@ -277,19 +282,24 @@
         </cside>
     </section>
 
-    <div class="w-full h-1/6">
+    <div class="w-full py-2">
         <Footer />
     </div>
 </main>
 
 <style>
     cside a,
-    button {
+    cside button,
+    cside label {
         cursor: pointer;
         transition: all 0.3s ease-in-out;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
     }
     cside a:hover,
-    button:hover {
+    cside button:hover,
+    cside label:hover {
         transform: scale(1.1);
+        background-color: #00000009;
     }
 </style>

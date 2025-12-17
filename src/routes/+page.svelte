@@ -10,7 +10,7 @@
     class="select-none flex flex-col items-center justify-center w-full h-screen bg-linear-to-b from-main-green-100 to-main-green-300"
 >
     <nav class="flex flex-col items-center justify-center w-full h-1/4">
-        <h1 class="text-4xl font-bold text-main-green-950">Mod Dowloader</h1>
+        <h1 class="text-4xl font-bold text-main-green-950">Mod Downloader</h1>
         <p class="text-2xl text-main-green-900">
             Descarga mods de Minecraft de forma sencilla y rápida
         </p>
