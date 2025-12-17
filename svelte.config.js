@@ -10,6 +10,7 @@ const config = {
 		alias: {
 			$utils: './src/utils', 
             $components: './src/components',
+            $lib: './src/lib'
 		}
 	}
 };

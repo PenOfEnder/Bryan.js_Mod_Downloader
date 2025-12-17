@@ -1,32 +1,30 @@
 <script>
     import mod_template from "$utils/mod_template.js";
 
-    let mods = [];
+    import { modListStore } from "$utils/mods.svelte.js";
 
     let modName = "";
 
     function addMod() {
         if (!modName) return;
 
-        const already = mods.some((m) => m.name === modName);
+        const already = modListStore.mods.some((m) => m.name === modName);
         if (already) return;
 
         let modTemplate = structuredClone(mod_template);
         modTemplate["name"] = modName;
-        mods.push(modTemplate);
-        mods = mods;
+        modListStore.addMod(modTemplate);
         modName = "";
     }
 
     function deleteModFromIndex(index) {
-        mods.splice(index, 1);
-        mods = mods;
+        modListStore.removeModFromIndex(index);
     }
 
     function exportModsInJSON() {
-        if (mods == "") return;
+        if (modListStore.mods == "") return;
 
-        const listOfMods = JSON.stringify(mods, null, 4);
+        const listOfMods = JSON.stringify(modListStore.mods, null, 4);
 
         const blobFile = new Blob([listOfMods], { type: "application/json" });
 
@@ -51,7 +49,7 @@
             try {
                 const data = JSON.parse(content);
 
-                mods = [...mods, ...data];
+                modListStore.mods = [...modListStore.mods, ...data];
             } catch (error) {
                 alert("Archivo corrupto o invalido");
             }
@@ -100,7 +98,7 @@
                 result = jsonResponse.data;
 
                 // Verificar si ya existe antes de agregar (opcional pero recomendado)
-                const exists = mods.some(
+                const exists = modListStore.mods.some(
                     (m) => m.project_id === result.project_id,
                 );
 
@@ -109,8 +107,7 @@
                     modTemplate.name = result.mod_name;
                     modTemplate.project_id = result.project_id;
 
-                    mods.push(modTemplate);
-                    mods = mods; // Trigger reactividad de Svelte
+                    modListStore.addMod(modTemplate);
                 } else {
                     alert("Este mod ya está en la lista");
                 }
@@ -205,7 +202,7 @@
                     >
                 </li>
 
-                {#each mods as mod, index}
+                {#each modListStore.mods as mod, index}
                     <li
                         class="w-full h-min text-lg flex items-center justify-between p-2 gap-4 selection:text-main-green-200 text-main-green-950 selection:bg-cyan-700"
                     >
