@@ -1,6 +1,8 @@
 <script>
     import Navbar from "$lib/components/ui/navbar.svelte";
     import Footer from "$lib/components/ui/footer.svelte";
+    import GenericModal from "$lib/components/ui/generic_modal.svelte";
+    import LoadingModal from "$lib/components/ui/loading_modal.svelte";
 
     import ArrowLeftIcon from "$lib/svg_icons/arrow_left.svelte";
     import ArrowRightIcon from "$lib/svg_icons/arrow_right.svelte";
@@ -15,6 +17,18 @@
     import QuiltIcon from "$lib/svg_icons/quilt.svelte";
     import NeoForgeIcon from "$lib/svg_icons/neoforge.svelte";
 
+    let loadingModalOpen = false;
+    let loadingModalMessage = "Descargando mods...";
+
+    // Estado del modal genérico
+    let modalOpen = false;
+    let modalConfig = {
+        title: "",
+        message: "",
+        type: "info",
+        onConfirm: () => {},
+    };
+
     const loaders = {
         fabric: false,
         forge: false,
@@ -22,10 +36,28 @@
         neoforge: false,
     };
 
-    let isDownloading = false;
-    let errorMsg = "";
+    function showErrorModal(message) {
+        modalConfig = {
+            title: "Error",
+            message: message,
+            type: "error",
+            onConfirm: () => {},
+        };
+        modalOpen = true;
+    }
+
+    function showSuccessModal(message) {
+        modalConfig = {
+            title: "Éxito",
+            message: message,
+            type: "success",
+            onConfirm: () => {},
+        };
+        modalOpen = true;
+    }
 
     function downloadAllMods() {
+        // Validar que haya al menos un loader seleccionado
         if (
             !(
                 loaders.fabric ||
@@ -33,8 +65,20 @@
                 loaders.quilt ||
                 loaders.neoforge
             )
-        )
-        return;
+        ) {
+            showErrorModal(
+                "Por favor selecciona al menos un loader antes de descargar.",
+            );
+            return;
+        }
+
+        // Validar que haya mods en la lista
+        if (modListStore.mods.length === 0) {
+            showErrorModal(
+                "No hay mods en la lista para descargar. Por favor agrega mods primero.",
+            );
+            return;
+        }
 
         let files = [];
 
@@ -49,12 +93,21 @@
                     });
                 }
             });
-        })
+        });
+
+        // Validar que se encontraron archivos para descargar
+        if (files.length === 0) {
+            showErrorModal(
+                "No se encontraron archivos para descargar con los loaders seleccionados. Verifica que los mods tengan versiones disponibles para los loaders elegidos.",
+            );
+            return;
+        }
 
         getZip(files);
     }
 
     function downloadSingleMod(modIndex) {
+        // Validar que haya al menos un loader seleccionado
         if (
             !(
                 loaders.fabric ||
@@ -62,53 +115,77 @@
                 loaders.quilt ||
                 loaders.neoforge
             )
-        )
+        ) {
+            showErrorModal(
+                "Por favor selecciona al menos un loader antes de descargar.",
+            );
             return;
+        }
 
-        const currentMod = modListStore.mods[modIndex].loaders;
+        const currentMod = modListStore.mods[modIndex];
         let files = [];
 
-        Object.entries(currentMod).forEach(([key, value]) => {
-            if (value) {
+        Object.entries(loaders).forEach(([key, value]) => {
+            if (value && currentMod.loaders[key]) {
                 files.push({
                     loader: key,
-                    url: value.url,
-                    name: value.filename,
+                    url: currentMod.loaders[key].url,
+                    name: currentMod.loaders[key].filename,
                 });
             }
         });
+
+        // Validar que se encontraron archivos para descargar
+        if (files.length === 0) {
+            showErrorModal(
+                `El mod "${currentMod.name}" no tiene versiones disponibles para los loaders seleccionados.`,
+            );
+            return;
+        }
 
         getZip(files);
     }
 
     async function getZip(files) {
         if (files.length === 0) return;
-        isDownloading = true;
 
-        const api_url = "/utils/svelte/download-zip";
-        const response = await fetch(api_url, {
-            method: "POST",
-            headers: { "Content-type": "application/json" },
-            body: JSON.stringify({ mod_list: files }),
-        });
+        loadingModalOpen = true;
+        loadingModalMessage = `Descargando ${files.length} archivo${files.length > 1 ? "s" : ""}...`;
 
-        console.log("Chingadera: " + response);
+        try {
+            const api_url = "/utils/svelte/download-zip";
+            const response = await fetch(api_url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mod_list: files }),
+            });
 
-        if (!response.ok) throw new Error("Error al descargar del servidor");
+            if (!response.ok) {
+                throw new Error("Error al descargar del servidor");
+            }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = url;
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "ModPack.zip";
 
-        a.download = "ModPack.zip";
+            document.body.appendChild(a);
+            a.click();
 
-        document.body.appendChild(a);
-        a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
 
-        window.URL.revokeObjectURL(url);
-        a.remove();
+            loadingModalOpen = false;
+            showSuccessModal("¡Descarga completada exitosamente!");
+        } catch (error) {
+            loadingModalOpen = false;
+            console.error("Error al descargar:", error);
+            showErrorModal(
+                "Ocurrió un error al descargar los mods. Por favor intenta nuevamente.",
+            );
+        }
     }
 </script>
 
@@ -274,6 +351,20 @@
         <Footer color="text-cyan-200 text-xl" />
     </div>
 </main>
+
+<GenericModal
+    bind:isOpen={modalOpen}
+    title={modalConfig.title}
+    message={modalConfig.message}
+    type={modalConfig.type}
+    onConfirm={modalConfig.onConfirm}
+    onCancel={() => {}}
+    confirmText={modalConfig.confirmText}
+    cancelText={modalConfig.cancelText}
+    showCancelButton={modalConfig.showCancelButton}
+/>
+
+<LoadingModal bind:isOpen={loadingModalOpen} message={loadingModalMessage} />
 
 <style>
     cside a,

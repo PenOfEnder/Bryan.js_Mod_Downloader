@@ -1,7 +1,8 @@
 <script>
     import { json } from "@sveltejs/kit";
-    import mod_template from "$utils/mod_template.js";
+
     import { modListStore } from "$utils/mods.svelte.js";
+    import mod_template from "$utils/mod_template.js";
 
     let modName = "";
 
@@ -36,7 +37,9 @@
         anchor.download = "mods";
 
         anchor.click();
-        URL.revokeObjectURL();
+        URL.revokeObjectURL(url);
+
+        exportMessage();
     }
 
     function importModsInJSON(event) {
@@ -63,6 +66,15 @@
     let result = null;
     let loading = false;
     let errorMsg = "";
+
+    // Estado del modal
+    let modalOpen = false;
+    let modalConfig = {
+        title: "",
+        message: "",
+        type: "info",
+        onConfirm: () => {},
+    };
 
     function bufferToHex(buffer) {
         return Array.from(new Uint8Array(buffer))
@@ -128,9 +140,35 @@
         }
     }
 
+    function clearModList() {
+        modListStore.clearModList();
+    }
+
+    function confirmClearModList() {
+        modalConfig = {
+            title: "Confirmar eliminación",
+            message:
+                "¿Estás seguro de que deseas eliminar todos los mods de la lista?",
+            type: "warning",
+            onConfirm: clearModList,
+        };
+        modalOpen = true;
+    }
+
+    function exportMessage(){
+        modalConfig = {
+            title: "Lista exportada correctamente",
+            message: "",
+            type: "success",
+            onConfirm: () => {},
+        };
+        modalOpen = true;
+    }
+
     import Navbar from "$lib/components/ui/navbar.svelte";
     import Footer from "$lib/components/ui/footer.svelte";
     import Input from "$lib/components/files/input.svelte";
+    import GenericModal from "$lib/components/ui/generic_modal.svelte";
 
     import ModList from "$lib/components/files/mods_list.svelte";
 
@@ -200,9 +238,9 @@
                         class="w-8/10 text-center bg-main-green-50 rounded-md p-2"
                         >Nombre del mod</span
                     >
-                    <span
+                    <button
                         class="w-1/10 bg-red-400 text-center text-main-green-950 rounded-md p-2"
-                        >Eliminar</span
+                        on:click={confirmClearModList}>Eliminar</button
                     >
                 </li>
 
@@ -285,6 +323,15 @@
         <Footer />
     </div>
 </main>
+
+<GenericModal
+    bind:isOpen={modalOpen}
+    title={modalConfig.title}
+    message={modalConfig.message}
+    type={modalConfig.type}
+    onConfirm={modalConfig.onConfirm}
+    onCancel={() => {}}
+/>
 
 <style>
     cside a,

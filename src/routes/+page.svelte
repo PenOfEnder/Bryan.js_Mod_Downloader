@@ -7,7 +7,7 @@
 </script>
 
 <main
-    class="select-none flex flex-col items-center justify-center w-full h-screen bg-linear-to-b from-main-green-100 to-main-green-300"
+    class="select-none flex flex-col items-center justify-center w-full h-screen bg-linear-to-b from-main-green-200 to-main-green-300"
 >
     <nav class="flex flex-col items-center justify-center w-full h-1/4">
         <h1 class="text-4xl font-bold text-main-green-950">Mod Downloader</h1>

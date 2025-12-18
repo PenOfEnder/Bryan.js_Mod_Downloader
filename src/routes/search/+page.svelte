@@ -1,6 +1,8 @@
 <script>
     import Navbar from "$lib/components/ui/navbar.svelte";
     import Footer from "$lib/components/ui/footer.svelte";
+    import GenericModal from "$lib/components/ui/generic_modal.svelte";
+    import LoadingModal from "$lib/components/ui/loading_modal.svelte";
 
     import FabricIcon from "$lib/svg_icons/fabric.svelte";
     import ForgeIcon from "$lib/svg_icons/forge.svelte";
@@ -18,6 +20,9 @@
 
     import { modListStore } from "$utils/mods.svelte.js";
     import mod_template from "$utils/mod_template.js";
+
+    let loadingModalOpen = false;
+    let loadingModalMessage = "Cargando...";
 
     const loaders = {
         fabric: false,
@@ -146,12 +151,16 @@
             return modObject;
         } catch (error) {
             console.error(`❌ Error al buscar "${modName}":`, error);
+
             return modObject;
         }
     }
 
     async function findMods(params) {
-        if (!(modListStore.mods.length > 0)) return;
+        loadingModalOpen = true;
+        if (!(modListStore.mods.length > 0)) {
+            return;
+        }
 
         console.log("Mods guardados: " + JSON.stringify(modListStore.mods));
 
@@ -205,11 +214,82 @@
 
         console.log("✅ Store actualizado globalmente");
         console.log("Store final:", modListStore.mods);
+        loadingModalOpen = false;
+    }
+
+    function importModsInJSON(event) {
+        const uploadedFile = event.target.files[0];
+        if (!uploadedFile) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const content = e.target.result;
+            try {
+                const data = JSON.parse(content);
+
+                modListStore.mods = [...modListStore.mods, ...data];
+            } catch (error) {
+                alert("Archivo corrupto o invalido");
+            }
+        };
+
+        reader.readAsText(uploadedFile);
+
+        importMessage();
+    }
+
+    function importMessage() {
+        modalConfig = {
+            title: "Lista importada correctamente",
+            message: "",
+            type: "success",
+            onConfirm: () => {},
+        };
+        modalOpen = true;
+    }
+
+    function saveList() {
+        if (modListStore.mods == "") return;
+
+        const listOfMods = JSON.stringify(modListStore.mods, null, 4);
+
+        const blobFile = new Blob([listOfMods], { type: "application/json" });
+
+        const url = URL.createObjectURL(blobFile);
+
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "mods";
+
+        anchor.click();
+        URL.revokeObjectURL(url);
+
+        exportMessage();
+    }
+
+    function exportMessage() {
+        modalConfig = {
+            title: "Lista guardada correctamente",
+            message: "",
+            type: "success",
+            onConfirm: () => {},
+        };
+        modalOpen = true;
     }
 
     function printModList() {
         console.log(modListStore.mods);
     }
+
+    // Estado del modal
+    let modalOpen = false;
+    let modalConfig = {
+        title: "",
+        message: "",
+        type: "info",
+        onConfirm: () => {},
+    };
 </script>
 
 <main
@@ -355,35 +435,65 @@
                     </div>
 
                     <ul
-                        class="w-1/3 flex items-center justify-around gap-2 bg-main-green-50 p-2 rounded-md"
+                        class="w-full h-full flex items-center justify-around gap-2 bg-main-green-50 p-2 rounded-md"
                     >
-                        <li class="flex-1 text-center">
-                            {typeof li_mod.loaders.fabric === "object"
-                                ? li_mod.loaders.fabric.version_number
-                                : li_mod.loaders.fabric}
+                        <li
+                            class="flex-1 flex items-center justify-start text-left"
+                        >
+                            {#if typeof li_mod.loaders.fabric === "object"}
+                                <span
+                                    class="flex items-center justify-center gap-2"
+                                >
+                                    <FabricIcon size="24px" color="#094b3c" />
+                                    {li_mod.loaders.fabric.version_number}
+                                </span>
+                            {:else}
+                                {li_mod.loaders.fabric}
+                            {/if}
                         </li>
-                        <li class="flex-1 text-center">
-                            {typeof li_mod.loaders.forge === "object"
-                                ? li_mod.loaders.forge.version_number
-                                : li_mod.loaders.forge}
+                        <li
+                            class="flex-1 flex items-center justify-start text-left"
+                        >
+                            {#if typeof li_mod.loaders.forge === "object"}
+                                <span
+                                    class="flex items-center justify-center gap-2"
+                                >
+                                    <ForgeIcon size="24px" color="#094b3c" />
+                                    {li_mod.loaders.forge.version_number}
+                                </span>
+                            {:else}
+                                {li_mod.loaders.forge}
+                            {/if}
                         </li>
-                        <li class="flex-1 text-center">
-                            {typeof li_mod.loaders.neoforge === "object"
-                                ? li_mod.loaders.neoforge.version_number
-                                : li_mod.loaders.neoforge}
+                        <li
+                            class="flex-1 flex items-center justify-start text-left"
+                        >
+                            {#if typeof li_mod.loaders.neoforge === "object"}
+                                <span
+                                    class="flex items-center justify-center gap-2"
+                                >
+                                    <NeoForgeIcon size="24px" color="#094b3c" />
+                                    {li_mod.loaders.neoforge.version_number}
+                                </span>
+                            {:else}
+                                {li_mod.loaders.neoforge}
+                            {/if}
                         </li>
-                        <li class="flex-1 text-center">
-                            {typeof li_mod.loaders.quilt === "object"
-                                ? li_mod.loaders.quilt.version_number
-                                : li_mod.loaders.quilt}
+                        <li
+                            class="flex-1 flex items-center justify-start text-left"
+                        >
+                            {#if typeof li_mod.loaders.quilt === "object"}
+                                <span
+                                    class="flex items-center justify-center gap-2"
+                                >
+                                    <QuiltIcon size="24px" color="#094b3c" />
+                                    {li_mod.loaders.quilt.version_number}
+                                </span>
+                            {:else}
+                                {li_mod.loaders.quilt}
+                            {/if}
                         </li>
                     </ul>
-
-                    <span
-                        class="w-1/3 h-full text-center bg-main-green-50 rounded-md p-2"
-                    >
-                        <ArrowBarIcon size="24px" color="#094b3c" />
-                    </span>
                 </li>
             {/each}
         </ModList>
@@ -398,20 +508,11 @@
                 <ArrowLeftIcon size={32} color="#094b3c" />
                 <h1 class="text-xl font-bold text-main-green-900">Regresar</h1>
             </a>
-            <button
-                class=" h-full flex items-center justify-center gap-4 cursor-pointer"
-                on:click={() => exportModsInJSON()}
-            >
-                <DownloadIcon size={32} color="#094b3c" />
-                <h1 class="text-xl font-bold text-main-green-900">
-                    Cargar lista
-                </h1>
-            </button>
             <label
                 class=" h-full flex items-center justify-center gap-4 cursor-pointer"
                 for="importList"
             >
-                <SaveIcon size={32} color="#094b3c" />
+                <DownloadIcon size={32} color="#094b3c" />
                 <input
                     class="hidden"
                     type="file"
@@ -420,9 +521,24 @@
                     id="importList"
                 />
                 <h1 class="text-xl font-bold text-main-green-900">
-                    Guardar lista
+                    Cargar lista
                 </h1>
             </label>
+            <button
+                class=" h-full flex items-center justify-center gap-4 cursor-pointer"
+                on:click={() => saveList()}
+            >
+                <SaveIcon size={32} color="#094b3c" />
+                <input
+                    class="hidden"
+                    type="file"
+                    accept=".json"
+                    id="importList"
+                />
+                <h1 class="text-xl font-bold text-main-green-900">
+                    Guardar lista
+                </h1>
+            </button>
             <a
                 class=" h-full flex items-center justify-center gap-4"
                 href="/download"
@@ -438,6 +554,17 @@
         <Footer />
     </div>
 </main>
+
+<LoadingModal bind:isOpen={loadingModalOpen} message={loadingModalMessage} />
+
+<GenericModal
+    bind:isOpen={modalOpen}
+    title={modalConfig.title}
+    message={modalConfig.message}
+    type={modalConfig.type}
+    onConfirm={modalConfig.onConfirm}
+    onCancel={() => {}}
+/>
 
 <style>
     toolbar > section button:hover,
