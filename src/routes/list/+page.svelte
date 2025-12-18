@@ -6,7 +6,6 @@
     let modName = "";
 
     function addMod() {
-
         if (!modName) return;
 
         const already = modListStore.mods.some((m) => m.name === modName);
@@ -15,7 +14,7 @@
         let modTemplate = structuredClone(mod_template);
         modTemplate["name"] = modName;
         modListStore.addMod(modTemplate);
-        
+
         modName = "";
     }
 

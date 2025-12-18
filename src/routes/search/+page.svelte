@@ -224,6 +224,8 @@
 
     <nav class="w-8/10 min-h-0 flex items-center justify-between p-2">
         <section class="w-full flex items-center justify-between">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
             <h1
                 class="w-1/3 text-2xl font-bold text-main-green-950"
                 on:click={() => printModList()}
@@ -335,11 +337,11 @@
             </versionselect>
         </section>
     </nav>
-    <section class="w-8/10 h-full">
+    <section class="w-8/10 h-full overflow-hidden">
         <ModList>
             {#each modListStore.mods as li_mod, index}
                 <li
-                    class="sticky top-0 select-none w-full h-min text-xl flex items-center justify-between p-2 gap-4 text-main-green-900"
+                    class="select-none w-full h-min text-xl flex items-center justify-between p-2 gap-4 text-main-green-900"
                 >
                     <div class="w-1/3 gap-2 flex items-center justify-between">
                         <span
