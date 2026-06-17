@@ -440,6 +440,14 @@
                     >
                     <option
                         class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
+                        value="26.1.1">26.1.1</option
+                    >
+                    <option
+                        class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
+                        value="26.1.2">26.1.2</option
+                    >
+                    <option
+                        class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
                         value="26.2">26.2</option
                     >
                     <option
