@@ -438,6 +438,19 @@
                         class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
                         value="26.1">26.1</option
                     >
+                    <option
+                        class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
+                        value="26.2">26.2</option
+                    >
+                    <option
+                        class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
+                        value="26.3">26.3</option
+                    >
+                    
+                    <option
+                        class="outline-none border-none rounded-0 text-main-green-900 hover:text-main-green-950 bg-main-green-400 hover:bg-main-green-500"
+                        value="26.4">26.4</option
+                    >
                 </select>
 
                 <button
