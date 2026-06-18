@@ -84,6 +84,17 @@
                 `✓ Proyecto encontrado: ${project.slug} (${project.project_id})`,
             );
 
+            // --- SOLUCIÓN AQUÍ ---
+            // 1. Aseguramos que el mod conserve el ID del proyecto
+            modObject.project_id = project.project_id;
+            
+            // 2. Limpiamos los enlaces de descarga de los loaders que estamos buscando 
+            // para evitar que se queden los de la versión anterior (ej. 26.1)
+            loadersArray.forEach(loader => {
+                modObject.loaders[loader] = "";
+            });
+            // ----------------------
+
             // PASO 2: Obtener versiones disponibles para los loaders y versión del juego
             const versionParams = new URLSearchParams({
                 loaders: JSON.stringify(loadersArray),
@@ -101,14 +112,15 @@
 
             const versions = await versionsResponse.json();
 
+            // Como ya limpiamos los loaders arriba, al hacer este return temprano 
+            // devolveremos el mod limpio (solo con nombre y project_id).
             if (!versions || versions.length === 0) {
-                console.log(`⚠️ "${modName}": Sin versiones compatibles`);
+                console.log(`⚠️ "${modName}": Sin versiones compatibles para la versión ${gameVersion}`);
                 return modObject;
             }
 
             // PASO 3: Seleccionar la última versión de cada loader
             const foundLoaders = {};
-
             for (const version of versions) {
                 for (const loader of version.loaders) {
                     if (
@@ -132,8 +144,6 @@
 
             // PASO 4: Actualizar el objeto del mod
             if (Object.keys(foundLoaders).length > 0) {
-                modObject.project_id = project.project_id;
-
                 // Mezclamos los loaders encontrados
                 for (const loaderKey in foundLoaders) {
                     modObject.loaders[loaderKey] = foundLoaders[loaderKey];
@@ -151,7 +161,6 @@
             return modObject;
         } catch (error) {
             console.error(`❌ Error al buscar "${modName}":`, error);
-
             return modObject;
         }
     }
