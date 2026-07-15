@@ -62,8 +62,6 @@
         reader.readAsText(uploadedFile);
     }
 
-    let selectedFile = null;
-    let result = null;
     let loading = false;
     let errorMsg = "";
 
@@ -82,60 +80,78 @@
             .join("");
     }
 
-    async function handleIdentify(e) {
-        if (!selectedFile) return;
+    // Nueva función que maneja múltiples archivos
+    async function handleMultipleIdentify(e) {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
         loading = true;
         errorMsg = "";
-        result = null;
+        
+        let addedCount = 0;
+        let existedCount = 0;
+        let notFoundCount = 0;
 
         try {
-            const arrayBuffer = await selectedFile.arrayBuffer();
-            const hashBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
-            const sha1Hash = bufferToHex(hashBuffer);
+            for (const file of files) {
+                const arrayBuffer = await file.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
+                const sha1Hash = bufferToHex(hashBuffer);
 
-            const response = await fetch("/utils/svelte/identify-mod", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ hash: sha1Hash }),
-            });
+                const response = await fetch("/utils/svelte/identify-mod", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ hash: sha1Hash }),
+                });
 
-            const jsonResponse = await response.json();
+                const jsonResponse = await response.json();
 
-            if (!response.ok)
-                throw new Error(jsonResponse.error || "Error del servidor");
-
-            if (jsonResponse.found) {
-                result = jsonResponse.data;
-
-                // Verificar si ya existe antes de agregar (opcional pero recomendado)
-                const exists = modListStore.mods.some(
-                    (m) => m.project_id === result.project_id,
-                );
-
-                if (!exists) {
-                    let modTemplate = structuredClone(mod_template);
-                    modTemplate.name = result.mod_name;
-                    modTemplate.project_id = result.project_id;
-
-                    modListStore.addMod(modTemplate);
-                } else {
-                    alert("Este mod ya está en la lista");
+                if (!response.ok) {
+                    console.error(`Error servidor con archivo ${file.name}:`, jsonResponse.error);
+                    notFoundCount++;
+                    continue;
                 }
-            } else {
-                errorMsg =
-                    "El mod no fue encontrado en la base de datos de Modrinth.";
+
+                if (jsonResponse.found) {
+                    const result = jsonResponse.data;
+
+                    const exists = modListStore.mods.some(
+                        (m) => m.project_id === result.project_id,
+                    );
+
+                    if (!exists) {
+                        let modTemplate = structuredClone(mod_template);
+                        modTemplate.name = result.mod_name;
+                        modTemplate.project_id = result.project_id;
+
+                        modListStore.addMod(modTemplate);
+                        addedCount++;
+                    } else {
+                        existedCount++;
+                    }
+                } else {
+                    notFoundCount++;
+                }
             }
-        } catch (e) {
-            console.error(e);
-            errorMsg = "Ocurrió un error al procesar el archivo.";
+        } catch (error) {
+            console.error("Error al procesar archivos:", error);
+            errorMsg = "Ocurrió un error al procesar algunos archivos.";
         } finally {
             loading = false;
-
-            // --- LIMPIEZA DEL BUFFER (IMPORTANTE) ---
-            selectedFile = null; // Borramos la variable en memoria
+            
+            // Limpieza del input
             if (e && e.target) {
-                e.target.value = ""; // Reseteamos el input HTML para permitir seleccionar el mismo archivo de nuevo si fuera necesario
+                e.target.value = "";
+            }
+
+            // Mostrar resumen si hubo incidencias o se procesó más de un archivo
+            if (files.length > 1 || existedCount > 0 || notFoundCount > 0) {
+                let mensajeFinal = `Procesamiento completado:\n- Añadidos: ${addedCount}`;
+                if (existedCount > 0) mensajeFinal += `\n- Ya existían: ${existedCount}`;
+                if (notFoundCount > 0) mensajeFinal += `\n- No encontrados/Errores: ${notFoundCount}`;
+                
+                // Puedes cambiar esto por tu GenericModal si prefieres
+                alert(mensajeFinal);
             }
         }
     }
@@ -202,15 +218,15 @@
             class="w-full flex items-center justify-between text-2xl p-2 gap-4"
         >
             <Input bind:inputValue={modName} />
+            
+            <!-- SE AÑADIÓ EL ATRIBUTO "multiple" Y SE ACTUALIZÓ EL on:change -->
             <input
                 id="file-jar"
                 class="hidden"
                 type="file"
                 accept=".jar"
-                on:change={(e) => {
-                    selectedFile = e.target.files[0];
-                    handleIdentify(e); // Pasamos el evento para poder limpiar el input después
-                }}
+                multiple
+                on:change={handleMultipleIdentify}
             />
 
             <label
@@ -218,7 +234,7 @@
                 class="flex items-center justify-center gap-2 bg-main-green-600 text-main-green-100 h-full text-nowrap rounded-md p-2 cursor-pointer disabled:bg-main-green-400 hover:bg-main-green-700 transition-colors ease-in-out duration-500"
                 disabled={loading}
             >
-                <span>{loading ? "Analizando..." : "Identificar JAR"}</span>
+                <span>{loading ? "Analizando..." : "Identificar JAR(s)"}</span>
                 <ZapIcon size="20px" color="#d3f8e7" />
             </label>
             <input
